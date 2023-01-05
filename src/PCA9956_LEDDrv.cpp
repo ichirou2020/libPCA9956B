@@ -12,15 +12,37 @@
  */
 
 #include "Arduino.h"
-#include "pca9956.h"
+#include "PCA9956_LEDDrv.h"
+
+#pragma region 列挙体の計算用のオペレーター各種
+/// @brief 		REGのor計算をするためのオペレーター
+/// @param l 	or計算したいREG 列挙体その1
+/// @param r 	or計算したいREG 列挙体その2
+/// @return 	orの結果
+static REG operator|(REG l, REG r){
+	return static_cast<REG>(static_cast<uint8_t>(l) | static_cast<uint8_t>(r));
+}
+
+/// @brief 		REGに対してのアドレス計算をするためのオペレーター
+/// @param l 	plus計算したいREG列挙体
+/// @param r 	アドレスを加算したい数値
+/// @return 	計算結果
+static REG operator+(REG l, uint8_t r){
+	return static_cast<REG>(static_cast<uint8_t>(l) + r);
+}
+#pragma endregion
+
 
 /// @brief コンストラクタ
 /// @param hard_adr ボードのアドレスを指定する
-/// @note   例えば、switch-scienceのPCA9956BTW I2C 24ch 電流源型LEDドライバ基板 であれば<br />初期値を0x7eとする
+/// @note   例えば、switch-scienceのPCA9956BTW I2C 24ch 電流源型LEDドライバ基板 であれば<br />初期値を0x3fとする<br />
+///			ただ、何故かI2C Scannerを使うと0x3fの他に0x70,0x77が検出される
 PCA9956_LEDDrv::PCA9956_LEDDrv(uint8_t hard_adr)
 {
     _hard_addr = hard_adr;
     _wire = new TwoWire(hard_adr);
+	_wire->begin(21,22,400000);	//これを設定しないとwire no default SDA Pin for second Peripheral　になる
+								// Intellisenseを見てるとfrequencyのデフォルトが0になっている platformioだから?
 }
 
 /// @brief デストラクタ
@@ -40,7 +62,7 @@ uint8_t PCA9956_LEDDrv::convItoGain(uint8_t current)
     if( current >= LED_ICURRENT_MAX){
         gain = LED_I_GAIN;
     }else{
-        gain = (uint8_t)(current * ( LED_ICURRENT_MAX /  LED_I_GAIN));
+        gain = (uint8_t)((int)(current * LED_I_GAIN) / LED_ICURRENT_MAX );
     }
 
     return gain;
@@ -53,12 +75,16 @@ uint8_t PCA9956_LEDDrv::convItoGain(uint8_t current)
 /// @return 
 E_RESULT_9956 PCA9956_LEDDrv::i2csend_serial(REG reg, std::vector<uint8_t> &data)
 {
-	_wire->beginTransmission((uint8_t)_hard_addr);   //アドレス設定
-
 	size_t dtsz = data.size();
 
-    _wire->write((uint8_t)reg);
-    _wire->write(data.data(), dtsz);
+//Serial.printf("reg=%02x data=0x%02x %02x %02x %02x \n", (int)reg, data[0], data[1], data[2], data[3]);
+//Serial.printf("size=%d datapointer=%x  \n", dtsz, data.data());
+
+	_wire->beginTransmission((uint8_t)_hard_addr);   //アドレス設定
+    size_t sendregsize = _wire->write((uint8_t)reg);
+    size_t senddatasize = _wire->write(data.data(), dtsz);
+
+//Serial.printf("sendregsize=%d senddatasize=%d  \n", sendregsize, senddatasize);
 
     _wire->endTransmission();
 
@@ -73,8 +99,12 @@ E_RESULT_9956 PCA9956_LEDDrv::i2csend(REG reg, uint8_t data)
 {
     _wire->beginTransmission((uint8_t)_hard_addr);   //アドレス設定
 
-    _wire->write((uint8_t)reg);
-    _wire->write(data);
+//Serial.printf("reg=%02x data=0x%02x \n", (int)reg, data);
+
+    size_t sendregsize = _wire->write((uint8_t)reg);
+    size_t senddatasize = _wire->write(data);
+
+//Serial.printf("i2csend sendregsize=%d senddatasize=%d  \n", sendregsize, senddatasize);
 
     _wire->endTransmission();
 

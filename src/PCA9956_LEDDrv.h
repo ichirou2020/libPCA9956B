@@ -158,25 +158,8 @@ enum class E_LED_INIT
 };
 #pragma endregion 列挙体
 
-#pragma region 列挙体の計算用のオペレーター各種
 
-/// @brief 		REGのor計算をするためのオペレーター
-/// @param l 	or計算したいREG 列挙体その1
-/// @param r 	or計算したいREG 列挙体その2
-/// @return 	orの結果
-REG operator|(REG l, REG r){
-	return static_cast<REG>(static_cast<uint8_t>(l) | static_cast<uint8_t>(r));
-}
 
-/// @brief 		REGに対してのアドレス計算をするためのオペレーター
-/// @param l 	plus計算したいREG列挙体
-/// @param r 	アドレスを加算したい数値
-/// @return 	計算結果
-REG operator+(REG l, uint8_t r){
-	return static_cast<REG>(static_cast<uint8_t>(l) + r);
-}
-
-#pragma endregion
 
 #pragma region 構造体
 /// @brief LEDに出す命令をパックした構造体
@@ -204,7 +187,7 @@ struct T_LEDCurrent
  */
 class PCA9956_LEDDrv
 {
-private:
+public:
 #pragma region	プライベート
 	/* data */
 	TwoWire *_wire;							//!<	I2Cライブラリ
@@ -226,7 +209,7 @@ private:
 
 
 #pragma endregion
-public:
+//public:
 	PCA9956_LEDDrv(uint8_t hard_adr);
 	~PCA9956_LEDDrv();
 	E_RESULT_9956 start(E_LED_INIT initorder);					  //!<	ドライバーを初期化する
