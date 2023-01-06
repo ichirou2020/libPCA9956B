@@ -123,7 +123,7 @@ enum class REG : uint8_t
 	IREF22,			///<	GAINの出力先(電流出力)22
 	IREF23,			///<	GAINの出力先(電流出力)23
 	//
-	MODEFLAG_INC = B10000000 	//!<	インクリメントモードのフラグ
+	MODEFLAG_INC = B10000000 	//!<	インクリメントモード時に設定するフラグ
 };
 
 /// @brief オートインクリメントオプション
@@ -158,9 +158,6 @@ enum class E_LED_INIT
 };
 #pragma endregion 列挙体
 
-
-
-
 #pragma region 構造体
 /// @brief LEDに出す命令をパックした構造体
 struct T_LEDOrder
@@ -178,8 +175,12 @@ struct T_LEDCurrent
 
 #pragma endregion 構造体
 
-//	------------------------------------	定数
-#define LED_CNT 24 //!<	LEDの個数
+#pragma region 定数
+
+#define LED_CNT 		24 				//!<	LEDの個数
+#define LED_PWM_MAX 	(uint8_t)255	//!<	LEDの調光の粒度
+
+#pragma endregion
 
 /**
  * @brief PCA9956 LEDドライバークラス
@@ -187,17 +188,14 @@ struct T_LEDCurrent
  */
 class PCA9956_LEDDrv
 {
-public:
+private:
 #pragma region	プライベート
 	/* data */
 	TwoWire *_wire;							//!<	I2Cライブラリ
 	const uint8_t LED_ICURRENT_MAX = 57; 	//!<	LEDの出力は最大57mA
 	const uint8_t LED_I_GAIN = 255;		 	//!<	LEDの供給電流の粒度
-	const uint8_t LED_PWM_MAX = 255;	 	//!<	LEDの調光の粒度
 	const uint8_t LED_DEFAULT_CURRENT = 5;	//!<	5mA程度をデフォルト値にする<br />
 											//!<	5mAなら、1005というSMD LEDでも大抵は耐えられる
-	//uint8_t _led_current[LED_CNT] = {5}; 	//!<	5mA程度をデフォルト値にする<br />
-	//									 	//!<  	5mAなら、1005というSMD LEDでも大抵は耐えられる
 	uint8_t _hard_addr = 0;				 	//!<	ボードのアドレス
 
 	uint8_t convItoGain(uint8_t current);							//!<	LEDの電流をPCA9956Bのデータに変換する
@@ -209,17 +207,18 @@ public:
 
 
 #pragma endregion
-//public:
+public:
 	PCA9956_LEDDrv(uint8_t hard_adr);
 	~PCA9956_LEDDrv();
-	E_RESULT_9956 start(E_LED_INIT initorder);					  //!<	ドライバーを初期化する
-	E_RESULT_9956 start(E_LED_INIT initorder, uint8_t icurrent);  //!<	ドライバーを初期化する(電流指定あり)
-	E_RESULT_9956 led_off(uint8_t ledno);						  //!<	指定のLED番号をOFF
-	E_RESULT_9956 led_on(uint8_t ledno);						  //!<	指定のLED番号をON
-	E_RESULT_9956 led_pwn(T_LEDOrder &ledorder);				  //!<	指定のLED番号の明るさを指定
-	E_RESULT_9956 led_pwn(std::vector<T_LEDOrder> &ledorder_lec); //!<	指定のLED番号の明るさを指定(複数一括指定)
-	E_RESULT_9956 led_setCurrent(uint8_t current);				  //!<	指定のLED番号の電流を指定
-	E_RESULT_9956 led_setCurrent(T_LEDCurrent &current);		  //!<	指定のLED番号の電流を指定(一括指定)
+
+	E_RESULT_9956 start();					  						//!<	ドライバーを初期化する
+	E_RESULT_9956 start(uint8_t icurrent);  						//!<	ドライバーを初期化する(電流指定あり)
+	E_RESULT_9956 led_off(uint8_t ledno);						  	//!<	指定のLED番号をOFF
+	E_RESULT_9956 led_on(uint8_t ledno);						  	//!<	指定のLED番号をON
+	E_RESULT_9956 led_pwn(T_LEDOrder &ledorder);				  	//!<	指定のLED番号の明るさを指定
+	E_RESULT_9956 led_pwn(std::vector<T_LEDOrder> &ledorder_lec); 	//!<	指定のLED番号の明るさを指定(複数一括指定)
+	// E_RESULT_9956 led_setCurrent(uint8_t current);				  	//!<	指定のLED番号の電流を指定
+	// E_RESULT_9956 led_setCurrent(T_LEDCurrent &current);		  	//!<	指定のLED番号の電流を指定(一括指定)
 };
 
 //!	@}

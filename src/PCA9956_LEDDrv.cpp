@@ -32,7 +32,6 @@ static REG operator+(REG l, uint8_t r){
 }
 #pragma endregion
 
-
 /// @brief コンストラクタ
 /// @param hard_adr ボードのアドレスを指定する
 /// @note   例えば、switch-scienceのPCA9956BTW I2C 24ch 電流源型LEDドライバ基板 であれば<br />初期値を0x3fとする<br />
@@ -127,20 +126,18 @@ E_RESULT_9956 PCA9956_LEDDrv::i2csend(REG reg,  std::vector<uint8_t> &data)
 }
 
 /// @brief 				ドライバーを初期化する
-/// @param initorder 	初期化指示
 /// @return 			OK/NG
-E_RESULT_9956 PCA9956_LEDDrv::start(E_LED_INIT initorder)
+E_RESULT_9956 PCA9956_LEDDrv::start()
 {
-	start(initorder, LED_DEFAULT_CURRENT);
+	start(LED_DEFAULT_CURRENT);
 
 	return E_RESULT_9956::OK;
 }
 
 /// @brief 				ドライバーを初期化する(電流指定あり)
-/// @param initorder 	初期化指示
 /// @param icurrent 	電流
 /// @return 			OK/NG
-E_RESULT_9956 PCA9956_LEDDrv::start(E_LED_INIT initorder, uint8_t icurrent)
+E_RESULT_9956 PCA9956_LEDDrv::start(uint8_t icurrent)
 {
 
 	uint8_t data1 = (uint8_t)MODE1_AUTO_INC::INC_IREF;
@@ -162,6 +159,35 @@ E_RESULT_9956 PCA9956_LEDDrv::start(E_LED_INIT initorder, uint8_t icurrent)
 
 	return E_RESULT_9956::OK;
 }
+
+/// @brief 			指定のLED番号をOFF
+/// @param ledno 	LED番号
+/// @return         OK/NG
+/// @details 		PWMの値を0にしているだけ
+E_RESULT_9956 PCA9956_LEDDrv::led_off(uint8_t ledno)
+{
+	T_LEDOrder order = {
+		.ledno = ledno
+		, .ledgain = 0
+		};
+	
+	return led_pwn(order);
+}
+
+/// @brief 			指定のLED番号をON
+/// @param ledno 	LED番号
+/// @return         OK/NG
+/// @details 		PWMの値を0xffにしているだけ
+E_RESULT_9956 PCA9956_LEDDrv::led_on(uint8_t ledno)
+{
+	T_LEDOrder order = {
+		.ledno = ledno
+		, .ledgain = LED_PWM_MAX
+		};
+	
+	return led_pwn(order);
+}
+
 
 /// @brief 				指定のLED番号の明るさを指定
 /// @param ledorder 	LEDの明度指定

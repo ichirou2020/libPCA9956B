@@ -6,14 +6,14 @@
  * @date 2023-01-06
  * 
  * @copyright Copyright (c) 2023
- * @defgroup	mainsrc	メインソース
+ * @defgroup	testsrc	ドライバテスト用メインソース
  * @{
  * 
  */
 
 #include <Arduino.h>
 #include "PCA9956_LEDDrv.h"
-
+#include "testseq.h"
 
 #if 0
 
@@ -127,55 +127,43 @@ void loop()
 // }
 // #pragma endregion
 
-PCA9956_LEDDrv *_drv = new PCA9956_LEDDrv(0x3f);
+static PCA9956_LEDDrv *_drv = new PCA9956_LEDDrv(0x3f);
 T_LEDOrder _order ;
 
 void setup() {
 	Serial.begin(115200);
-	_drv->start(E_LED_INIT::PWM);
+	_drv->start(20);		//テスト的に20mAにしているが5mAで充分明るい
 
-	for(int i = 0 ; i < LED_CNT; i++){
-		_order.ledno = (uint8_t)i;
-		_order.ledgain = 0;
-		_drv->led_pwn(_order);
-	}
+	SetPCA9956Drv(_drv);	//メインソースを綺麗にするために、別のソースでドライバーを制御を
+	AllOff();				//一旦全部LEDクリア
 
 	delay(1000);
 
+	//先頭の赤色LEDを50で点灯
 	_order.ledno = (uint)0;
 	_order.ledgain = 50;
 	_drv->led_pwn(_order);
 
-	_order.ledno = (uint)23;	//最後の青LED
-	_order.ledgain = 255;
+	//最後の青色LEDを255で点灯
+	_order.ledno = (uint)(LED_CNT - 1);	
+	_order.ledgain = LED_PWM_MAX;
 	_drv->led_pwn(_order);
 	delay(1000);
 }
 
-bool 		_on = true;
-uint8_t 	_gain = 0;
-
+/// @brief メインループ
 void loop() {
-	for(int i = 0; i < LED_CNT; i++){
-		//赤だけ徐々に明るくする
-		if( i % 3 == 0){
-			_order.ledno = (uint)i;
-			_order.ledgain = _gain;
-			_drv->led_pwn(_order);
-
-		}		
-	}
-Serial.printf("Gain Red=%d\n", _gain);
-	if(_gain == 0){
-		delay(1000);
-	}
-	if(_gain == 255){
-		_gain = 0;
-	}else{
-		_gain++;
-	}
-
-	delay(100);
+	AllOff();		//全部OFF
+	delay(1000);
+	AllRed();		//赤を徐々に明るく
+	AllGreen();		//緑を徐々に明るく
+	AllBlue();		//青を徐々に明るく
+	AllOff();		//全部OFF
+	delay(1000);
+	PartRGB();		//デモ用に適当に光らせる
+	delay(5000);
+	AllOn();
+	delay(1000);
 }
 #endif
 
